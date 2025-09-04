@@ -1,0 +1,572 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>面试必考！Java实现归并、快排、堆排，彻底搞懂NlogN算法 | 菜菜熊</title><meta name="author" content="菜菜熊"><meta name="copyright" content="菜菜熊"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="如果你正在准备算法面试，那么这三种排序你一定绕不开：  归并排序、快速排序、堆排序   它们是 O(nlogn) 时间复杂度的代表，也是各大厂面试中的“常客”。无论是手撕代码、分析稳定性，还是讨论递归优化，这些问题都可能在一轮面试中接连抛出。 别慌，今天我们就来逐个击破，用最直白的语言 + 清晰的 Java 实现，带你真正理解这三大经典排序的本质。 一、归并排序（Merge Sort）1. 核心思">
+<meta property="og:type" content="article">
+<meta property="og:title" content="面试必考！Java实现归并、快排、堆排，彻底搞懂NlogN算法">
+<meta property="og:url" content="http://example.com/2025/09/03/%E9%9D%A2%E8%AF%95%E5%BF%85%E8%80%83%EF%BC%81Java%E5%AE%9E%E7%8E%B0%E5%BD%92%E5%B9%B6%E3%80%81%E5%BF%AB%E6%8E%92%E3%80%81%E5%A0%86%E6%8E%92%EF%BC%8C%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82NlogN%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:site_name" content="菜菜熊">
+<meta property="og:description" content="如果你正在准备算法面试，那么这三种排序你一定绕不开：  归并排序、快速排序、堆排序   它们是 O(nlogn) 时间复杂度的代表，也是各大厂面试中的“常客”。无论是手撕代码、分析稳定性，还是讨论递归优化，这些问题都可能在一轮面试中接连抛出。 别慌，今天我们就来逐个击破，用最直白的语言 + 清晰的 Java 实现，带你真正理解这三大经典排序的本质。 一、归并排序（Merge Sort）1. 核心思">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg">
+<meta property="article:published_time" content="2025-09-03T14:49:56.484Z">
+<meta property="article:modified_time" content="2025-09-04T03:02:41.389Z">
+<meta property="article:author" content="菜菜熊">
+<meta property="article:tag" content="#java实现">
+<meta property="article:tag" content="#排序算法">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "面试必考！Java实现归并、快排、堆排，彻底搞懂NlogN算法",
+  "url": "http://example.com/2025/09/03/%E9%9D%A2%E8%AF%95%E5%BF%85%E8%80%83%EF%BC%81Java%E5%AE%9E%E7%8E%B0%E5%BD%92%E5%B9%B6%E3%80%81%E5%BF%AB%E6%8E%92%E3%80%81%E5%A0%86%E6%8E%92%EF%BC%8C%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82NlogN%E7%AE%97%E6%B3%95/",
+  "image": "https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg",
+  "datePublished": "2025-09-03T14:49:56.484Z",
+  "dateModified": "2025-09-04T03:02:41.389Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "菜菜熊",
+      "url": "http://example.com"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg"><link rel="canonical" href="http://example.com/2025/09/03/%E9%9D%A2%E8%AF%95%E5%BF%85%E8%80%83%EF%BC%81Java%E5%AE%9E%E7%8E%B0%E5%BD%92%E5%B9%B6%E3%80%81%E5%BF%AB%E6%8E%92%E3%80%81%E5%A0%86%E6%8E%92%EF%BC%8C%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82NlogN%E7%AE%97%E6%B3%95/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '面试必考！Java实现归并、快排、堆排，彻底搞懂NlogN算法',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">5</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时光档案</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://personal-blog01.oss-cn-chengdu.aliyuncs.com/bg2.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><img class="site-icon" src="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg" alt="Logo"><span class="site-name">菜菜熊</span></a><a class="nav-page-title" href="/"><span class="site-name">面试必考！Java实现归并、快排、堆排，彻底搞懂NlogN算法</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时光档案</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">面试必考！Java实现归并、快排、堆排，彻底搞懂NlogN算法</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-09-03T14:49:56.484Z" title="发表于 2025-09-03 22:49:56">2025-09-03</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-04T03:02:41.389Z" title="更新于 2025-09-04 11:02:41">2025-09-04</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/java%E7%AE%97%E6%B3%95/">java算法</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>如果你正在准备算法面试，那么这三种排序你一定绕不开：</p>
+<blockquote>
+<p><strong>归并排序、快速排序、堆排序</strong> </p>
+</blockquote>
+<p>它们是 <em>O</em>(<em>n</em>log<em>n</em>) 时间复杂度的代表，也是各大厂面试中的“常客”。无论是手撕代码、分析稳定性，还是讨论递归优化，这些问题都可能在一轮面试中接连抛出。</p>
+<p>别慌，今天我们就来<strong>逐个击破</strong>，用最直白的语言 + 清晰的 Java 实现，带你真正理解这三大经典排序的本质。</p>
+<h2 id="一、归并排序（Merge-Sort）"><a href="#一、归并排序（Merge-Sort）" class="headerlink" title="一、归并排序（Merge Sort）"></a>一、归并排序（Merge Sort）</h2><h3 id="1-核心思想：分而治之"><a href="#1-核心思想：分而治之" class="headerlink" title="1. 核心思想：分而治之"></a>1. 核心思想：分而治之</h3><p>归并排序的核心思想来自<code>“分治法”</code>（Divide and Conquer）：</p>
+<blockquote>
+<p><strong>先把大问题拆成小问题，分别解决，再把结果合并起来。</strong> </p>
+</blockquote>
+<p>具体到排序就是：</p>
+<ol>
+<li>把数组从中间一分为二；</li>
+<li>对左右两部分递归地进行归并排序；</li>
+<li>将两个有序的子数组“合并”成一个更大的有序数组。</li>
+</ol>
+<p>这个过程像极了“先分家，后团圆”。</p>
+<h3 id="2-算法步骤"><a href="#2-算法步骤" class="headerlink" title="2. 算法步骤"></a>2. 算法步骤</h3><ol>
+<li><strong>分解</strong>：将数组不断二分，直到每个子数组只有一个元素（单个元素天然有序）。</li>
+<li><strong>合并</strong>：将两个有序数组合并为一个新的有序数组，使用双指针技巧。</li>
+<li><strong>回溯</strong>：层层合并，最终得到完整有序数组。</li>
+</ol>
+<p>📌 关键：<strong>合并操作是稳定的，且能高效完成。</strong></p>
+<h3 id="3-Java-代码实现"><a href="#3-Java-代码实现" class="headerlink" title="3. Java 代码实现"></a>3. Java 代码实现</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">MergeSort</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">mergeSort</span><span class="params">(<span class="type">int</span>[] arr)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (arr == <span class="literal">null</span> || arr.length &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line">        <span class="type">int</span>[] temp = <span class="keyword">new</span> <span class="title class_">int</span>[arr.length]; <span class="comment">// 辅助数组，避免频繁创建</span></span><br><span class="line">        mergeSort(arr, temp, <span class="number">0</span>, arr.length - <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">mergeSort</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span>[] temp, <span class="type">int</span> left, <span class="type">int</span> right)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (left &gt;= right) <span class="keyword">return</span>; <span class="comment">// 递归终止：只有一个元素</span></span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> <span class="variable">mid</span> <span class="operator">=</span> left + (right - left) / <span class="number">2</span>;</span><br><span class="line">        mergeSort(arr, temp, left, mid);      <span class="comment">// 排左半</span></span><br><span class="line">        mergeSort(arr, temp, mid + <span class="number">1</span>, right); <span class="comment">// 排右半</span></span><br><span class="line">        merge(arr, temp, left, mid, right);   <span class="comment">// 合并</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">merge</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span>[] temp, <span class="type">int</span> left, <span class="type">int</span> mid, <span class="type">int</span> right)</span> &#123;</span><br><span class="line">        <span class="comment">// 复制当前区间到辅助数组</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> left; i &lt;= right; i++) &#123;</span><br><span class="line">            temp[i] = arr[i];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> left;      <span class="comment">// 左半部分起点</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">j</span> <span class="operator">=</span> mid + <span class="number">1</span>;   <span class="comment">// 右半部分起点</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">k</span> <span class="operator">=</span> left;      <span class="comment">// 原数组的写入位置</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 双指针合并</span></span><br><span class="line">        <span class="keyword">while</span> (i &lt;= mid &amp;&amp; j &lt;= right) &#123;</span><br><span class="line">            <span class="keyword">if</span> (temp[i] &lt;= temp[j]) &#123;  </span><br><span class="line">                arr[k++] = temp[i++]; <span class="comment">// 左边小，先放左边</span></span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                arr[k++] = temp[j++]; <span class="comment">// 右边小，先放右边</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 处理剩余元素</span></span><br><span class="line">        <span class="keyword">while</span> (i &lt;= mid) arr[k++] = temp[i++];</span><br><span class="line">        <span class="keyword">while</span> (j &lt;= right) arr[k++] = temp[j++];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">int</span>[] arr = &#123;<span class="number">64</span>, <span class="number">34</span>, <span class="number">25</span>, <span class="number">12</span>, <span class="number">22</span>, <span class="number">11</span>, <span class="number">90</span>&#125;;</span><br><span class="line">        System.out.println(<span class="string">&quot;排序前: &quot;</span> + java.util.Arrays.toString(arr));</span><br><span class="line">        mergeSort(arr);</span><br><span class="line">        System.out.println(<span class="string">&quot;排序后: &quot;</span> + java.util.Arrays.toString(arr));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-代码解析：三句话讲清楚"><a href="#4-代码解析：三句话讲清楚" class="headerlink" title="4.代码解析：三句话讲清楚"></a>4.代码解析：三句话讲清楚</h3><ol>
+<li><strong>递归拆分</strong>：<code>mergeSort</code> 不断将数组从中点拆成左右两半，直到只剩一个元素（自然有序）。</li>
+<li><strong>辅助数组防覆盖</strong>：<code>merge</code> 前先复制当前段到 <code>temp</code>，防止合并时读取错误数据。</li>
+<li><strong>双指针合并</strong>：用 <code>i</code> 和 <code>j</code> 分别指向左右两段，谁小取谁，放入原数组；最后补上剩余部分。</li>
+</ol>
+<p>📌 <strong>关键点</strong>：</p>
+<ul>
+<li><code>temp</code> 数组是性能优化，避免频繁创建；</li>
+<li>比较时用 <code>&lt;=</code> 而不是 <code>&lt;</code>，保证<strong>稳定性</strong>（相等时优先取左边）；</li>
+<li>合并完成后，<code>arr[left..right]</code> 就有序了。</li>
+</ul>
+<!-----------------------------问题分析------------------------------->
+
+<h4 id="🤔-问题：为什么要有“处理剩余元素”这一步？"><a href="#🤔-问题：为什么要有“处理剩余元素”这一步？" class="headerlink" title="🤔 问题：为什么要有“处理剩余元素”这一步？"></a>🤔 问题：为什么要有“处理剩余元素”这一步？</h4><p>先看代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 处理剩余元素</span></span><br><span class="line"><span class="keyword">while</span> (i &lt;= mid) arr[k++] = temp[i++];</span><br><span class="line"><span class="keyword">while</span> (j &lt;= right) arr[k++] = temp[j++];</span><br></pre></td></tr></table></figure>
+
+<p>这三行代码的意思是：</p>
+<blockquote>
+<p>把<strong>左边或右边还没来得及合并的元素</strong>，全部补到结果数组里。 </p>
+</blockquote>
+<p>听起来简单，但为什么要这么做？我们通过一个例子来说明。</p>
+<h4 id="🧩-举个例子：看看“剩余元素”是怎么来的"><a href="#🧩-举个例子：看看“剩余元素”是怎么来的" class="headerlink" title="🧩 举个例子：看看“剩余元素”是怎么来的"></a>🧩 举个例子：看看“剩余元素”是怎么来的</h4><p>假设我们有两个已经排好序的子数组，要合并它们：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">左半部分（left ~ mid）：[3, 7, 9]</span><br><span class="line">右半部分（mid+1 ~ right）：[4, 5, 8]</span><br></pre></td></tr></table></figure>
+
+<p>它们在 <code>temp</code> 数组中是这样的（假设原始位置从索引 0 开始）：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">temp: [3, 7, 9, 4, 5, 8]</span><br><span class="line">       ↑     ↑  ↑</span><br><span class="line">     i=0   mid=2 j=3</span><br></pre></td></tr></table></figure>
+
+<p>我们用双指针 <code>i</code> 和 <code>j</code> 从两个子数组开头开始比较：</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>比较</th>
+<th>操作</th>
+<th>结果数组arr</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><code>3 &lt; 4</code></td>
+<td>取左边<code>3</code></td>
+<td><code>[3]</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>7 &gt; 4</code></td>
+<td>取右边<code>4</code></td>
+<td><code>[3,4]</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>7 &gt; 5</code></td>
+<td>取右边<code>5</code></td>
+<td><code>[3,4,5]</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>7 &lt; 8</code></td>
+<td>取左边<code>7</code></td>
+<td><code>[3,4,5,7]</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>9 &gt; 8</code></td>
+<td>取右边<code>8</code></td>
+<td><code>[3,4,5,7,8]</code></td>
+</tr>
+</tbody></table>
+<p>现在：</p>
+<ul>
+<li><code>i = 2</code>（指向 <code>9</code>）</li>
+<li><code>j = 5</code>（越过了右半部分）</li>
+<li><code>j &gt; right</code> → 跳出主循环</li>
+</ul>
+<p>但注意：<strong>左边还剩一个 <code>9</code> 没放进去！</strong></p>
+<p>👉 这就是“剩余元素”。</p>
+<p>如果此时不处理，<code>9</code> 就会被丢掉，结果变成 <code>[3,4,5,7,8]</code>，明显错了。</p>
+<p>所以我们要补上：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (i &lt;= mid) arr[k++] = temp[i++];</span><br></pre></td></tr></table></figure>
+
+<p>这句就会把 <code>9</code> 补上，最终得到 <code>[3,4,5,7,8,9]</code>，正确！</p>
+<h4 id="🎯-什么时候会出现“剩余元素”？"><a href="#🎯-什么时候会出现“剩余元素”？" class="headerlink" title="🎯 什么时候会出现“剩余元素”？"></a>🎯 什么时候会出现“剩余元素”？</h4><p>只要有一个子数组<strong>先被取完</strong>，另一个子数组剩下的元素就都是“剩余元素”。</p>
+<p>比如：</p>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th>哪边有剩余</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>左边小，右边大 → 左边先取完</td>
+<td>右边有剩余</td>
+</tr>
+<tr>
+<td>右边小，左边大 → 右边先取完</td>
+<td>左边有剩余</td>
+</tr>
+<tr>
+<td>两边一样长，最后相等 → 同时取完</td>
+<td>都没有剩余</td>
+</tr>
+</tbody></table>
+<p>✅ 所以我们必须检查两边是否还有“漏网之鱼”。</p>
+<h4 id="🔍-为什么不能只靠主循环？"><a href="#🔍-为什么不能只靠主循环？" class="headerlink" title="🔍 为什么不能只靠主循环？"></a>🔍 为什么不能只靠主循环？</h4><p>主循环的条件是：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> (i &lt;= mid &amp;&amp; j &lt;= right)</span><br></pre></td></tr></table></figure>
+
+<p>意思是：<strong>只有当两边都还有元素时，才继续比较</strong>。</p>
+<p>一旦某一边走完了（比如 <code>j &gt; right</code>），循环就结束了，不管另一边还有多少元素。</p>
+<p>所以，主循环只负责“交叉合并”，<strong>不负责收尾</strong>。</p>
+<blockquote>
+<p>📌 收尾工作，就是“处理剩余元素”的使命。 </p>
+</blockquote>
+<h4 id="✅-类比理解：两个队伍合并报数"><a href="#✅-类比理解：两个队伍合并报数" class="headerlink" title="✅ 类比理解：两个队伍合并报数"></a>✅ 类比理解：两个队伍合并报数</h4><p>想象你有两个排好序的队伍：</p>
+<ul>
+<li>A队：3, 7, 9</li>
+<li>B队：4, 5, 8</li>
+</ul>
+<p>你们要合并成一个有序的大队列。</p>
+<p>规则是：每次比较两队第一个没报数的人，谁小谁出列。</p>
+<p>当 B 队的 <code>8</code> 出列后，B 队没人了，但 A 队还有 <code>9</code> 没报。</p>
+<p>这时候，你不能说“B 队没了，结束！”——否则 <code>9</code> 就被遗忘了。</p>
+<p>正确的做法是：<strong>把 A 队剩下的所有人依次出列</strong>。</p>
+<p>这就是“处理剩余元素”的现实意义。</p>
+<h3 id="💡-总结：三句话搞懂“处理剩余元素”"><a href="#💡-总结：三句话搞懂“处理剩余元素”" class="headerlink" title="💡 总结：三句话搞懂“处理剩余元素”"></a>💡 总结：三句话搞懂“处理剩余元素”</h3><ol>
+<li><strong>主循环只合并到某一边取完为止</strong>，不会处理剩下的。</li>
+<li><strong>剩下的一边一定是有序的</strong>，而且比已合并的所有元素都大（因为前面的都比较过了）。</li>
+<li><strong>所以可以直接依次复制过去，不需要再比较</strong>。</li>
+</ol>
+<h3 id="5-复杂度分析"><a href="#5-复杂度分析" class="headerlink" title="5. 复杂度分析"></a>5. 复杂度分析</h3><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>时间复杂度</strong></td>
+<td><em>O</em>(<em>n</em>log<em>n</em>)—— 无论最好、最坏、平均情况</td>
+</tr>
+<tr>
+<td><strong>空间复杂度</strong></td>
+<td><em>O</em>(<em>n</em>)—— 需要一个辅助数组</td>
+</tr>
+<tr>
+<td><strong>稳定性</strong></td>
+<td>✅ 稳定 —— 相等时优先取左边元素</td>
+</tr>
+<tr>
+<td><strong>是否原地</strong></td>
+<td>❌ 非原地排序</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>💬 归并排序像是一个严谨的工程师：不追求最快，但始终可靠。 </p>
+</blockquote>
+<h3 id="6-优缺点"><a href="#6-优缺点" class="headerlink" title="6. 优缺点"></a>6. 优缺点</h3><ul>
+<li>✅ <strong>优点</strong>：时间稳定、可并行、适合链表、外部排序（如大文件排序）。</li>
+<li>❌ <strong>缺点</strong>：需要额外空间，小数据场景不如插入排序快。</li>
+</ul>
+<h2 id="二、快速排序（Quick-Sort）"><a href="#二、快速排序（Quick-Sort）" class="headerlink" title="二、快速排序（Quick Sort）"></a>二、快速排序（Quick Sort）</h2><h3 id="1-核心思想：挖坑填数-分区"><a href="#1-核心思想：挖坑填数-分区" class="headerlink" title="1. 核心思想：挖坑填数 + 分区"></a>1. 核心思想：挖坑填数 + 分区</h3><p>快速排序也是分治思想的体现，但策略不同：</p>
+<blockquote>
+<p><strong>选一个基准值（pivot），把数组分成两部分：小于它的放左边，大于它的放右边。然后对左右两部分递归处理。</strong> </p>
+</blockquote>
+<p>这个过程叫做“分区”（Partition），是快排的灵魂。</p>
+<h3 id="2-算法步骤-1"><a href="#2-算法步骤-1" class="headerlink" title="2. 算法步骤"></a>2. 算法步骤</h3><ol>
+<li>从数组中选择一个元素作为“基准”（pivot），通常选第一个或随机一个。</li>
+<li>将所有小于 pivot 的元素移到它左边，大于的移到右边。</li>
+<li>此时 pivot 的位置就确定了。</li>
+<li>对左右两个子数组递归执行快排。</li>
+</ol>
+<p>📌 关键：<strong>如何高效分区？</strong></p>
+<h3 id="3-Java-代码实现（挖坑法-双指针）"><a href="#3-Java-代码实现（挖坑法-双指针）" class="headerlink" title="3. Java 代码实现（挖坑法 + 双指针）"></a>3. Java 代码实现（挖坑法 + 双指针）</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">QuickSort</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 快速排序主方法（入口）</span></span><br><span class="line"><span class="comment">     * 调用递归版本，传入初始边界</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> arr 待排序的整数数组</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">quickSort</span><span class="params">(<span class="type">int</span>[] arr)</span> &#123;</span><br><span class="line">        <span class="comment">// 边界检查：空数组或只有一个元素时，无需排序</span></span><br><span class="line">        <span class="keyword">if</span> (arr == <span class="literal">null</span> || arr.length &lt;= <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 启动递归快排，处理整个数组范围 [0, length-1]</span></span><br><span class="line">        quickSort(arr, <span class="number">0</span>, arr.length - <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 递归快排函数</span></span><br><span class="line"><span class="comment">     * 将数组分为左右两部分，分别进行快排</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> arr 数组</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> left 当前处理区间的左边界</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> right 当前处理区间的右边界</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">quickSort</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> left, <span class="type">int</span> right)</span> &#123;</span><br><span class="line">        <span class="comment">// 递归终止条件：如果左边界 &gt;= 右边界，说明当前区间元素个数 ≤1，已有序</span></span><br><span class="line">        <span class="keyword">if</span> (left &gt;= right) &#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 使用 partition 函数对当前区间 [left, right] 进行分区操作</span></span><br><span class="line">        <span class="comment">// 返回基准元素（pivot）最终应该在的位置索引</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">pivotIndex</span> <span class="operator">=</span> partition(arr, left, right);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 递归排序基准左侧的子数组 [left, pivotIndex - 1]</span></span><br><span class="line">        quickSort(arr, left, pivotIndex - <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 递归排序基准右侧的子数组 [pivotIndex + 1, right]</span></span><br><span class="line">        quickSort(arr, pivotIndex + <span class="number">1</span>, right);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 分区函数（挖坑法实现）</span></span><br><span class="line"><span class="comment">     * 将区间 [left, right] 中的元素重新排列，使得：</span></span><br><span class="line"><span class="comment">     * - 所有小于 pivot 的元素放在其左边</span></span><br><span class="line"><span class="comment">     * - 所有大于等于 pivot 的元素放在其右边</span></span><br><span class="line"><span class="comment">     * 最终返回 pivot 的最终位置</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * 使用“挖坑填数”技巧，避免频繁交换</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">partition</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> left, <span class="type">int</span> right)</span> &#123;</span><br><span class="line">        <span class="comment">// 选择最左边的元素作为基准值（pivot）</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">pivot</span> <span class="operator">=</span> arr[left];</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 定义两个指针，从区间两端向中间扫描</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> left;   <span class="comment">// 左指针，从左边开始</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">j</span> <span class="operator">=</span> right;  <span class="comment">// 右指针，从右边开始</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 当两个指针未相遇时，持续进行分区操作</span></span><br><span class="line">        <span class="keyword">while</span> (i &lt; j) &#123;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * 第一步：从右往左找</span></span><br><span class="line"><span class="comment">             * 找到第一个小于 pivot 的元素</span></span><br><span class="line"><span class="comment">             * 注意：arr[j] &gt;= pivot 时继续移动，跳过所有“大或等于”的数</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">while</span> (i &lt; j &amp;&amp; arr[j] &gt;= pivot) &#123;</span><br><span class="line">                j--;  <span class="comment">// 右指针左移</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 如果找到了这样的元素（i &lt; j 成立），把它填到左边的“坑”里</span></span><br><span class="line">            <span class="keyword">if</span> (i &lt; j) &#123;</span><br><span class="line">                arr[i] = arr[j];  <span class="comment">// 把 arr[j] 填到 arr[i] 的位置（i 处形成新坑）</span></span><br><span class="line">                i++;              <span class="comment">// 左指针右移，指向新的“坑”位置</span></span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/*</span></span><br><span class="line"><span class="comment">             * 第二步：从左往右找</span></span><br><span class="line"><span class="comment">             * 找到第一个大于或等于 pivot 的元素</span></span><br><span class="line"><span class="comment">             * 注意：这里用 arr[i] &lt; pivot，跳过所有“小”的数</span></span><br><span class="line"><span class="comment">             */</span></span><br><span class="line">            <span class="keyword">while</span> (i &lt; j &amp;&amp; arr[i] &lt; pivot) &#123;</span><br><span class="line">                i++;  <span class="comment">// 左指针右移</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 如果找到了这样的元素（i &lt; j 成立），把它填到右边的“坑”里</span></span><br><span class="line">            <span class="keyword">if</span> (i &lt; j) &#123;</span><br><span class="line">                arr[j] = arr[i];  <span class="comment">// 把 arr[i] 填到 arr[j] 的位置（j 处形成新坑）</span></span><br><span class="line">                j--;              <span class="comment">// 右指针左移，指向新的“坑”位置</span></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * 循环结束时，i == j，说明指针相遇，此处就是 pivot 的最终位置</span></span><br><span class="line"><span class="comment">         * 将最初的 pivot 值填入这个“坑”中</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        arr[i] = pivot;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 返回 pivot 的最终索引位置，用于划分左右子区间</span></span><br><span class="line">        <span class="keyword">return</span> i;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 测试方法</span></span><br><span class="line"><span class="comment">     * 验证快速排序的正确性</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">int</span>[] arr = &#123;<span class="number">64</span>, <span class="number">34</span>, <span class="number">25</span>, <span class="number">12</span>, <span class="number">22</span>, <span class="number">11</span>, <span class="number">90</span>&#125;;</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;排序前: &quot;</span> + java.util.Arrays.toString(arr));</span><br><span class="line"></span><br><span class="line">        quickSort(arr);</span><br><span class="line"></span><br><span class="line">        System.out.println(<span class="string">&quot;排序后: &quot;</span> + java.util.Arrays.toString(arr));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-代码解析：什么是“挖坑法”？"><a href="#4-代码解析：什么是“挖坑法”？" class="headerlink" title="4. 代码解析：什么是“挖坑法”？"></a>4. 代码解析：什么是“挖坑法”？</h3><p>想象你在地上挖了个坑（<code>arr[left]</code> 被拿走），现在要找人来填。</p>
+<ul>
+<li>从右边找一个小于 <code>pivot</code> 的数，把它挪到左边的坑里，右边就空出一个新坑；</li>
+<li>再从左边找一个大于等于 <code>pivot</code> 的数，填到右边的坑；</li>
+<li>如此往复，直到左右指针相遇；</li>
+<li>最后把 <code>pivot</code> 填进最后的坑。</li>
+</ul>
+<p>📌 这样做的好处是：<strong>避免频繁交换，提升性能</strong>。</p>
+<h3 id="5-复杂度分析-1"><a href="#5-复杂度分析-1" class="headerlink" title="5. 复杂度分析"></a>5. 复杂度分析</h3><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>时间复杂度</strong></td>
+<td>平均<em>O</em>(<em>n</em>log<em>n</em>)，最坏<em>O</em>(<em>n</em>2)（基准选得极差）</td>
+</tr>
+<tr>
+<td><strong>空间复杂度</strong></td>
+<td><em>O</em>(log<em>n</em>)—— 递归栈深度</td>
+</tr>
+<tr>
+<td><strong>稳定性</strong></td>
+<td>❌ 不稳定 —— 相等元素可能被换位置</td>
+</tr>
+<tr>
+<td><strong>是否原地</strong></td>
+<td>✅ 原地排序</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ 最坏情况出现在：数组已有序，而你每次都选第一个元素作 pivot。 </p>
+</blockquote>
+<p>✅ 优化建议：<strong>随机选择 pivot</strong> 或 <strong>三数取中法</strong> 可避免最坏情况。</p>
+<h3 id="6-优缺点-1"><a href="#6-优缺点-1" class="headerlink" title="6. 优缺点"></a>6. 优缺点</h3><ul>
+<li>✅ <strong>优点</strong>：平均性能极佳，原地排序，缓存友好，Java 中 <code>Arrays.sort()</code> 对基本类型就用它。</li>
+<li>❌ <strong>缺点</strong>：不稳定，最坏情况差，递归可能栈溢出。</li>
+</ul>
+<blockquote>
+<p>💬 快排像一位“赌徒”：大多数时候赢麻了，但偶尔也会翻车。 </p>
+</blockquote>
+<hr>
+<h3 id="🔧-（进阶）优化实现：随机-pivot-与三数取中法"><a href="#🔧-（进阶）优化实现：随机-pivot-与三数取中法" class="headerlink" title="🔧 （进阶）优化实现：随机 pivot 与三数取中法"></a>🔧 （进阶）优化实现：随机 pivot 与三数取中法</h3><h4 id="✅-优化版本-1：随机基准（Randomized-Pivot）"><a href="#✅-优化版本-1：随机基准（Randomized-Pivot）" class="headerlink" title="✅ 优化版本 1：随机基准（Randomized Pivot）"></a>✅ 优化版本 1：随机基准（Randomized Pivot）</h4><h5 id="🌟-优化思路："><a href="#🌟-优化思路：" class="headerlink" title="🌟 优化思路："></a>🌟 优化思路：</h5><p>不固定选择 <code>arr[left]</code> 作为基准，而是<strong>从 <code>left</code> 到 <code>right</code> 范围内随机选一个元素作为 pivot</strong>，并把它交换到左边，再进行分区。</p>
+<p>这样可以极大降低“每次都选到最大&#x2F;最小值”的概率，使平均性能更稳定。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.Random;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">QuickSortRandom</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">Random</span> <span class="variable">rand</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Random</span>();</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">quickSort</span><span class="params">(<span class="type">int</span>[] arr)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (arr == <span class="literal">null</span> || arr.length &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line">        quickSort(arr, <span class="number">0</span>, arr.length - <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">quickSort</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> left, <span class="type">int</span> right)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (left &gt;= right) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> <span class="variable">pivotIndex</span> <span class="operator">=</span> partitionWithRandomPivot(arr, left, right);</span><br><span class="line">        quickSort(arr, left, pivotIndex - <span class="number">1</span>);</span><br><span class="line">        quickSort(arr, pivotIndex + <span class="number">1</span>, right);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 随机化分区：先随机选 pivot，再交换到左边</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">partitionWithRandomPivot</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> left, <span class="type">int</span> right)</span> &#123;</span><br><span class="line">        <span class="comment">// 随机选择一个索引</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">randomIndex</span> <span class="operator">=</span> left + rand.nextInt(right - left + <span class="number">1</span>);</span><br><span class="line">        <span class="comment">// 将随机选中的元素与 left 位置交换</span></span><br><span class="line">        swap(arr, left, randomIndex);</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> <span class="variable">pivot</span> <span class="operator">=</span> arr[left]; <span class="comment">// 现在 pivot 是随机选的</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> left, j = right;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> (i &lt; j) &#123;</span><br><span class="line">            <span class="keyword">while</span> (i &lt; j &amp;&amp; arr[j] &gt;= pivot) j--;</span><br><span class="line">            <span class="keyword">if</span> (i &lt; j) arr[i++] = arr[j];</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span> (i &lt; j &amp;&amp; arr[i] &lt; pivot) i++;</span><br><span class="line">            <span class="keyword">if</span> (i &lt; j) arr[j--] = arr[i];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        arr[i] = pivot;</span><br><span class="line">        <span class="keyword">return</span> i;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">swap</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> i, <span class="type">int</span> j)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">temp</span> <span class="operator">=</span> arr[i];</span><br><span class="line">        arr[i] = arr[j];</span><br><span class="line">        arr[j] = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">int</span>[] arr = &#123;<span class="number">64</span>, <span class="number">34</span>, <span class="number">25</span>, <span class="number">12</span>, <span class="number">22</span>, <span class="number">11</span>, <span class="number">90</span>&#125;;</span><br><span class="line">        System.out.println(<span class="string">&quot;排序前: &quot;</span> + java.util.Arrays.toString(arr));</span><br><span class="line">        quickSort(arr);</span><br><span class="line">        System.out.println(<span class="string">&quot;排序后: &quot;</span> + java.util.Arrays.toString(arr));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="✅-优点："><a href="#✅-优点：" class="headerlink" title="✅ 优点："></a>✅ 优点：</h5><ul>
+<li>简单有效，适用于大多数场景；</li>
+<li>在面对<strong>已排序或近似有序数据</strong>时，性能远优于固定 pivot。</li>
+</ul>
+<h4 id="✅-优化版本-2：三数取中法（Median-of-Three）"><a href="#✅-优化版本-2：三数取中法（Median-of-Three）" class="headerlink" title="✅ 优化版本 2：三数取中法（Median-of-Three）"></a>✅ 优化版本 2：三数取中法（Median-of-Three）</h4><h5 id="🌟-优化思路：-1"><a href="#🌟-优化思路：-1" class="headerlink" title="🌟 优化思路："></a>🌟 优化思路：</h5><p>从数组的<strong>首、中、尾</strong>三个元素中选出“中位数”作为 pivot，避免极端值。</p>
+<p>例如：取 <code>arr[left]</code>、<code>arr[mid]</code>、<code>arr[right]</code> 中的中位数，把它交换到 <code>left</code> 位置，再进行分区。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">QuickSortMedianOfThree</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">quickSort</span><span class="params">(<span class="type">int</span>[] arr)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (arr == <span class="literal">null</span> || arr.length &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line">        quickSort(arr, <span class="number">0</span>, arr.length - <span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">quickSort</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> left, <span class="type">int</span> right)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (left &gt;= right) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> <span class="variable">pivotIndex</span> <span class="operator">=</span> partitionWithMedianOfThree(arr, left, right);</span><br><span class="line">        quickSort(arr, left, pivotIndex - <span class="number">1</span>);</span><br><span class="line">        quickSort(arr, pivotIndex + <span class="number">1</span>, right);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 三数取中法 + 分区</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="type">int</span> <span class="title function_">partitionWithMedianOfThree</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> left, <span class="type">int</span> right)</span> &#123;</span><br><span class="line">        medianOfThree(arr, left, right);</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> <span class="variable">pivot</span> <span class="operator">=</span> arr[left]; <span class="comment">// 中位数已交换到 left</span></span><br><span class="line">        <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> left, j = right;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">while</span> (i &lt; j) &#123;</span><br><span class="line">            <span class="keyword">while</span> (i &lt; j &amp;&amp; arr[j] &gt;= pivot) j--;</span><br><span class="line">            <span class="keyword">if</span> (i &lt; j) arr[i++] = arr[j];</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span> (i &lt; j &amp;&amp; arr[i] &lt; pivot) i++;</span><br><span class="line">            <span class="keyword">if</span> (i &lt; j) arr[j--] = arr[i];</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        arr[i] = pivot;</span><br><span class="line">        <span class="keyword">return</span> i;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 将首、中、尾三数的中位数交换到 left 位置</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">medianOfThree</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> left, <span class="type">int</span> right)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">mid</span> <span class="operator">=</span> left + (right - left) / <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 确保 arr[left] 是 arr[left], arr[mid], arr[right] 的中位数</span></span><br><span class="line">        <span class="keyword">if</span> ((arr[mid] &lt; arr[left] &amp;&amp; arr[left] &lt; arr[right]) ||</span><br><span class="line">            (arr[right] &lt; arr[left] &amp;&amp; arr[left] &lt; arr[mid])) &#123;</span><br><span class="line">            <span class="comment">// left 已经是中位数，无需操作</span></span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> ((arr[left] &lt; arr[mid] &amp;&amp; arr[mid] &lt; arr[right]) ||</span><br><span class="line">            (arr[right] &lt; arr[mid] &amp;&amp; arr[mid] &lt; arr[left])) &#123;</span><br><span class="line">            <span class="comment">// mid 是中位数，交换到 left</span></span><br><span class="line">            swap(arr, left, mid);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((arr[left] &lt; arr[right] &amp;&amp; arr[right] &lt; arr[mid]) ||</span><br><span class="line">                   (arr[mid] &lt; arr[right] &amp;&amp; arr[right] &lt; arr[left])) &#123;</span><br><span class="line">            <span class="comment">// right 是中位数，交换到 left</span></span><br><span class="line">            swap(arr, left, right);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">swap</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> i, <span class="type">int</span> j)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">temp</span> <span class="operator">=</span> arr[i];</span><br><span class="line">        arr[i] = arr[j];</span><br><span class="line">        arr[j] = temp;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">int</span>[] arr = &#123;<span class="number">64</span>, <span class="number">34</span>, <span class="number">25</span>, <span class="number">12</span>, <span class="number">22</span>, <span class="number">11</span>, <span class="number">90</span>&#125;;</span><br><span class="line">        System.out.println(<span class="string">&quot;排序前: &quot;</span> + java.util.Arrays.toString(arr));</span><br><span class="line">        quickSort(arr);</span><br><span class="line">        System.out.println(<span class="string">&quot;排序后: &quot;</span> + java.util.Arrays.toString(arr));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="✅-优点：-1"><a href="#✅-优点：-1" class="headerlink" title="✅ 优点："></a>✅ 优点：</h5><ul>
+<li>比随机法更“确定”，不需要随机数生成；</li>
+<li>在实际库函数中广泛应用（如 Java 的 <code>Arrays.sort()</code> 对对象数组使用类似策略）。</li>
+</ul>
+<h4 id="🔍-两种优化对比"><a href="#🔍-两种优化对比" class="headerlink" title="🔍 两种优化对比"></a>🔍 两种优化对比</h4><table>
+<thead>
+<tr>
+<th>优化方式</th>
+<th>优点</th>
+<th>缺点</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>随机 pivot</strong></td>
+<td>实现简单，概率上最优</td>
+<td>依赖随机数，可能有轻微开销</td>
+<td>通用场景，教学演示</td>
+</tr>
+<tr>
+<td><strong>三数取中</strong></td>
+<td>确定性强，性能稳定</td>
+<td>代码稍复杂</td>
+<td>工业级实现、性能敏感场景</td>
+</tr>
+</tbody></table>
+<h4 id="💡-小贴士：生产环境中的快排"><a href="#💡-小贴士：生产环境中的快排" class="headerlink" title="💡 小贴士：生产环境中的快排"></a>💡 小贴士：生产环境中的快排</h4><p>在真实的排序库中（如 Java 的 <code>DualPivotQuicksort</code>），快排通常会结合多种优化：</p>
+<ul>
+<li>三数取中或双基准；</li>
+<li>小数组切换为插入排序；</li>
+<li>尾递归优化减少栈深度；</li>
+<li>三路快排处理重复元素。</li>
+</ul>
+<p>但对我们学习者来说，掌握 <strong>随机化</strong> 或 <strong>三数取中</strong>，就已经能显著提升快排的鲁棒性。</p>
+<hr>
+<h2 id="三、堆排序（Heap-Sort）"><a href="#三、堆排序（Heap-Sort）" class="headerlink" title="三、堆排序（Heap Sort）"></a>三、堆排序（Heap Sort）</h2><h3 id="1-核心思想：利用大顶堆“逐个选最大”"><a href="#1-核心思想：利用大顶堆“逐个选最大”" class="headerlink" title="1. 核心思想：利用大顶堆“逐个选最大”"></a>1. 核心思想：利用大顶堆“逐个选最大”</h3><p>堆排序基于<strong>二叉堆</strong>（通常是大顶堆）的性质：</p>
+<blockquote>
+<p><strong>父节点 &gt;&#x3D; 子节点</strong>，根节点就是最大值。 </p>
+</blockquote>
+<p>它的思路很直接：</p>
+<ol>
+<li>把数组构建成一个大顶堆；</li>
+<li>每次把堆顶（最大值）和末尾元素交换；</li>
+<li>堆大小减一，然后调整堆，恢复大顶堆性质；</li>
+<li>重复直到堆为空。</li>
+</ol>
+<p>📌 本质：<strong>不断“选最大”并放到末尾</strong>，类似选择排序，但用堆加速了查找最大值的过程。</p>
+<h3 id="2-算法步骤-2"><a href="#2-算法步骤-2" class="headerlink" title="2. 算法步骤"></a>2. 算法步骤</h3><ol>
+<li>构建初始大顶堆（从最后一个非叶子节点开始下沉）。</li>
+<li>将堆顶与末尾交换，最大值归位。</li>
+<li>堆长度减 1，调整堆。</li>
+<li>重复步骤 2–3，直到只剩一个元素。</li>
+</ol>
+<h4 id="图解算法"><a href="#图解算法" class="headerlink" title="图解算法"></a>图解算法</h4><p>@JavaGuide</p>
+<p><img src="https://raw.githubusercontent.com/zhaojianjun2004/picGo/master/img/heap_sort.gif" alt="heap_sort"></p>
+<h3 id="3-Java-代码实现-1"><a href="#3-Java-代码实现-1" class="headerlink" title="3. Java 代码实现"></a>3. Java 代码实现</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HeapSort</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">heapSort</span><span class="params">(<span class="type">int</span>[] arr)</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (arr == <span class="literal">null</span> || arr.length &lt;= <span class="number">1</span>) <span class="keyword">return</span>;</span><br><span class="line"></span><br><span class="line">        <span class="type">int</span> <span class="variable">n</span> <span class="operator">=</span> arr.length;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 1. 构建大顶堆（从最后一个非叶子节点开始）</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> n / <span class="number">2</span> - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i--) &#123;</span><br><span class="line">            heapify(arr, n, i);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 2. 逐个取出堆顶元素</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> n - <span class="number">1</span>; i &gt; <span class="number">0</span>; i--) &#123;</span><br><span class="line">            swap(arr, <span class="number">0</span>, i);       <span class="comment">// 最大值放到末尾</span></span><br><span class="line">            heapify(arr, i, <span class="number">0</span>);    <span class="comment">// 重新调整堆（大小为 i）</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 调整堆，使以 i 为根的子树满足大顶堆性质</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">heapify</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> heapSize, <span class="type">int</span> i)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">largest</span> <span class="operator">=</span> i;</span><br><span class="line">        <span class="type">int</span> <span class="variable">left</span> <span class="operator">=</span> <span class="number">2</span> * i + <span class="number">1</span>;</span><br><span class="line">        <span class="type">int</span> <span class="variable">right</span> <span class="operator">=</span> <span class="number">2</span> * i + <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (left &lt; heapSize &amp;&amp; arr[left] &gt; arr[largest]) &#123;</span><br><span class="line">            largest = left;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (right &lt; heapSize &amp;&amp; arr[right] &gt; arr[largest]) &#123;</span><br><span class="line">            largest = right;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (largest != i) &#123;</span><br><span class="line">            swap(arr, i, largest);</span><br><span class="line">            heapify(arr, heapSize, largest); <span class="comment">// 递归调整被换下去的节点</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">swap</span><span class="params">(<span class="type">int</span>[] arr, <span class="type">int</span> i, <span class="type">int</span> j)</span> &#123;</span><br><span class="line">        <span class="type">int</span> <span class="variable">temp</span> <span class="operator">=</span> arr[i];</span><br><span class="line">        arr[i] = arr[j];</span><br><span class="line">        arr[j] = temp;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">int</span>[] arr = &#123;<span class="number">64</span>, <span class="number">34</span>, <span class="number">25</span>, <span class="number">12</span>, <span class="number">22</span>, <span class="number">11</span>, <span class="number">90</span>&#125;;</span><br><span class="line">        System.out.println(<span class="string">&quot;排序前: &quot;</span> + java.util.Arrays.toString(arr));</span><br><span class="line">        heapSort(arr);</span><br><span class="line">        System.out.println(<span class="string">&quot;排序后: &quot;</span> + java.util.Arrays.toString(arr));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-代码解析：heapify-是关键"><a href="#4-代码解析：heapify-是关键" class="headerlink" title="4. 代码解析：heapify 是关键"></a>4. 代码解析：<code>heapify</code> 是关键</h3><ul>
+<li><code>heapify(arr, heapSize, i)</code>：确保以 <code>i</code> 为根的子树是大顶堆。</li>
+<li>从 <code>n/2 - 1</code> 开始构建堆，因为这是最后一个非叶子节点（数学性质）。</li>
+<li>每次交换堆顶后，只对剩余部分调用 <code>heapify</code>，堆大小递减。</li>
+</ul>
+<p>📌 堆用数组表示，父子关系如下：</p>
+<ul>
+<li>父节点 <code>i</code> 的左孩子：<code>2*i + 1</code></li>
+<li>右孩子：<code>2*i + 2</code></li>
+<li>父节点：<code>(i-1)/2</code></li>
+</ul>
+<h3 id="5-复杂度分析-2"><a href="#5-复杂度分析-2" class="headerlink" title="5. 复杂度分析"></a>5. 复杂度分析</h3><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>时间复杂度</strong></td>
+<td><em>O</em>(<em>n</em>log<em>n</em>)—— 构建堆<em>O</em>(<em>n</em>)，每次调整<em>O</em>(log<em>n</em>)</td>
+</tr>
+<tr>
+<td><strong>空间复杂度</strong></td>
+<td><em>O</em>(1)—— 原地排序</td>
+</tr>
+<tr>
+<td><strong>稳定性</strong></td>
+<td>❌ 不稳定 —— 跨层级交换可能打乱顺序</td>
+</tr>
+<tr>
+<td><strong>是否原地</strong></td>
+<td>✅ 原地排序</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>💬 堆排序像一位“纪律严明的士兵”：不声不响，但始终稳定输出。 </p>
+</blockquote>
+<h3 id="6-优缺点-2"><a href="#6-优缺点-2" class="headerlink" title="6. 优缺点"></a>6. 优缺点</h3><ul>
+<li>✅ <strong>优点</strong>：时间稳定、原地排序、适合实时系统（如嵌入式）。</li>
+<li>❌ <strong>缺点</strong>：实现稍复杂，不稳定，缓存性能不如快排。</li>
+</ul>
+<p>【如果到这还没有看懂，请移步<a href="/2025/09/04/%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82%E5%A0%86%E6%8E%92%E5%BA%8F%EF%BC%9A%E4%BB%8E%E4%BA%8C%E5%8F%89%E5%A0%86%E5%88%B0%E6%95%B0%E7%BB%84%E5%AE%9E%E7%8E%B0%EF%BC%8C%E4%B8%80%E6%96%87%E7%9C%8B%E6%87%82%E6%AF%8F%E4%B8%80%E6%AD%A5/" title="彻底搞懂堆排序：从二叉堆到数组实现，一文看懂每一步">彻底搞懂堆排序：从二叉堆到数组实现，一文看懂每一步</a>】</p>
+<h2 id="四、三大排序对比总结"><a href="#四、三大排序对比总结" class="headerlink" title="四、三大排序对比总结"></a>四、三大排序对比总结</h2><table>
+<thead>
+<tr>
+<th>算法</th>
+<th>时间复杂度（平均）</th>
+<th>最坏情况</th>
+<th>空间</th>
+<th>稳定性</th>
+<th>是否原地</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>归并排序</td>
+<td><em>O</em>(<em>n</em>log<em>n</em>)</td>
+<td><em>O</em>(<em>n</em>log<em>n</em>)</td>
+<td><em>O</em>(<em>n</em>)</td>
+<td>✅</td>
+<td>❌</td>
+<td>外部排序、链表、要求稳定</td>
+</tr>
+<tr>
+<td>快速排序</td>
+<td><em>O</em>(<em>n</em>log<em>n</em>)</td>
+<td><em>O</em>(<em>n</em>2)</td>
+<td><em>O</em>(log<em>n</em>)</td>
+<td>❌</td>
+<td>✅</td>
+<td>一般数组排序（Java 基本类型）</td>
+</tr>
+<tr>
+<td>堆排序</td>
+<td><em>O</em>(<em>n</em>log<em>n</em>)</td>
+<td><em>O</em>(<em>n</em>log<em>n</em>)</td>
+<td><em>O</em>(1)</td>
+<td>❌</td>
+<td>✅</td>
+<td>内存受限、实时系统</td>
+</tr>
+</tbody></table>
+<h2 id="✅-面试高频问题（提前准备）"><a href="#✅-面试高频问题（提前准备）" class="headerlink" title="✅ 面试高频问题（提前准备）"></a>✅ 面试高频问题（提前准备）</h2><ol>
+<li><strong>快排为什么快？最坏情况怎么优化？</strong><br>→ 因为分区后问题规模指数级缩小；可通过随机 pivot 或三数取中优化。</li>
+<li><strong>归并排序为什么稳定？</strong><br>→ 合并时相等元素优先取左边。</li>
+<li><strong>堆排序是怎么用数组实现堆的？</strong><br>→ 利用完全二叉树的索引规律：左孩子 <code>2i+1</code>，右孩子 <code>2i+2</code>。</li>
+<li><strong>哪种排序适合链表？</strong><br>→ 归并排序（不需要随机访问，适合链表分治）。</li>
+<li><strong>哪种排序是原地的？</strong><br>→ 快排、堆排序是原地的；归并非原地。</li>
+</ol>
+<h2 id="结语：NlogN-的世界，不止是排序"><a href="#结语：NlogN-的世界，不止是排序" class="headerlink" title="结语：NlogN 的世界，不止是排序"></a>结语：NlogN 的世界，不止是排序</h2><p>归并、快排、堆排，不只是三种算法，更是三种思维方式：</p>
+<ul>
+<li><strong>归并</strong>：稳扎稳打，合二为一；</li>
+<li><strong>快排</strong>：大胆分区，快速收敛；</li>
+<li><strong>堆排</strong>：结构驱动，步步为营。</li>
+</ul>
+<p>它们各有优劣，没有绝对的“最好”，只有“最合适”。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="http://example.com">菜菜熊</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="http://example.com/2025/09/03/%E9%9D%A2%E8%AF%95%E5%BF%85%E8%80%83%EF%BC%81Java%E5%AE%9E%E7%8E%B0%E5%BD%92%E5%B9%B6%E3%80%81%E5%BF%AB%E6%8E%92%E3%80%81%E5%A0%86%E6%8E%92%EF%BC%8C%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82NlogN%E7%AE%97%E6%B3%95/">http://example.com/2025/09/03/%E9%9D%A2%E8%AF%95%E5%BF%85%E8%80%83%EF%BC%81Java%E5%AE%9E%E7%8E%B0%E5%BD%92%E5%B9%B6%E3%80%81%E5%BF%AB%E6%8E%92%E3%80%81%E5%A0%86%E6%8E%92%EF%BC%8C%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82NlogN%E7%AE%97%E6%B3%95/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="http://example.com" target="_blank">菜菜熊</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/java%E5%AE%9E%E7%8E%B0/">#java实现</a><a class="post-meta__tags" href="/tags/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95/">#排序算法</a></div><div class="post-share"><div class="social-share" data-image="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/09/04/%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82%E5%A0%86%E6%8E%92%E5%BA%8F%EF%BC%9A%E4%BB%8E%E4%BA%8C%E5%8F%89%E5%A0%86%E5%88%B0%E6%95%B0%E7%BB%84%E5%AE%9E%E7%8E%B0%EF%BC%8C%E4%B8%80%E6%96%87%E7%9C%8B%E6%87%82%E6%AF%8F%E4%B8%80%E6%AD%A5/" title="彻底搞懂堆排序：从二叉堆到数组实现，一文看懂每一步"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">彻底搞懂堆排序：从二叉堆到数组实现，一文看懂每一步</div></div><div class="info-2"><div class="info-item-1">如果你学过归并排序和快速排序，可能会觉得它们“靠逻辑”；但当你第一次看到堆排序时，大概率会冒出三个问号：   堆是个啥？是数据结构还是算法？ 为什么建堆要从 n/2 - 1 开始？ heapify 到底在干什么？为什么要递归？   别急。今天我们不讲术语堆砌，也不甩公式，就用一张张“演变图” + 一行行代码解析，带你从零理解堆排序的每一个动作背后的逻辑。 准备好了吗？我们开始。 一、堆的本质：一棵用数组伪装的二叉树堆（Heap）是一种特殊的完全二叉树，分为大顶堆和小顶堆：  大顶堆：父节点 ≥ 子节点 → 根是最大值 小顶堆：父节点 ≤ 子节点 → 根是最小值  而堆排序用的是大顶堆，目标很明确：  不断把最大值拿出来，放到数组末尾，直到整个数组有序。   但关键来了：我们不用真的建一棵树！  🌲 堆是“用数组表示的二叉树”。   📐 数组如何表示二叉树？索引的秘密我们有一个数组： 1int[] arr = &#123;64, 34, 25, 12, 22, 11, 90&#125;;  它的索引是： 12索引： 0   1   2   3   4   5   6值：  64...</div></div></div></a><a class="pagination-related" href="/2025/09/03/%E5%B8%8C%E5%B0%94%E6%8E%92%E5%BA%8F%E8%AF%A6%E8%A7%A3/" title="希尔排序详解"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">希尔排序详解</div></div><div class="info-2"><div class="info-item-1">希尔排序代码详解（一看就懂）很多初学者看到希尔排序的代码会一头雾水，尤其是这个 gap 和 while 循环到底在干什么。别急，我们来一步步拆解。 我们先回顾一下代码： 123456789101112131415161718public static void shellSort(int[] arr) &#123;    if (arr == null || arr.length &lt;= 1) return;        // 1. 初始增量设为数组长度的一半    for (int gap = arr.length / 2; gap &gt; 0; gap /= 2) &#123;        // 2. 对每个子序列进行插入排序        for (int i = gap; i &lt; arr.length; i++) &#123;            int temp = arr[i];        // 当前要插入的元素            int j = i;            // 3. 在子序列中向前查找并移动元素            wh...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/09/03/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AD%A6%E6%8E%92%E5%BA%8F%EF%BC%9AJava%E5%AE%9E%E7%8E%B0%E5%86%92%E6%B3%A1%E3%80%81%E9%80%89%E6%8B%A9%E3%80%81%E6%8F%92%E5%85%A5%E3%80%81%E5%B8%8C%E5%B0%94/" title="从零开始学排序：Java实现冒泡、选择、插入、希尔"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-03</div><div class="info-item-2">从零开始学排序：Java实现冒泡、选择、插入、希尔</div></div><div class="info-2"><div class="info-item-1">排序是算法世界的“入门第一课”。在学习复杂算法之前，理解几种基础排序的思想，不仅能打下扎实的功底，还能帮助我们建立对时间、空间复杂度的直观认知。 本文将带你系统梳理四种经典排序算法：冒泡排序、选择排序、插入排序和希尔排序。每一种都配有清晰的核心思想、步骤解析、Java 实现以及复杂度分析。不堆术语，只讲人话，力求让你看完就能懂、能写、能讲。  一、冒泡排序（Bubble Sort）1. 核心思想冒泡排序的名字很形象——就像水中的气泡一样，小的元素慢慢“浮”向顶端，大的元素逐渐“沉”到底部。 它的基本逻辑很简单：  重复遍历数组，比较相邻两个元素，如果顺序错了（前 &gt; 后），就交换它们。每一轮下来，最大的那个数就会被“推”到最后的位置。  这个过程不断重复，直到整个数组有序为止。  2. 算法步骤 从数组第一个元素开始，依次比较相邻两数。 若前面的数比后面的大，则交换位置。 一趟扫描完成后，最大值已“冒泡”到末尾。 对剩下的未排序部分重复上述过程，直到所有元素归位。   📌 小贴士：每完成一轮，最后的 i 个元素已经是最大且有序的，所以下一轮可以少比较 i 次。   3. ...</div></div></div></a><a class="pagination-related" href="/2025/09/03/%E5%B8%8C%E5%B0%94%E6%8E%92%E5%BA%8F%E8%AF%A6%E8%A7%A3/" title="希尔排序详解"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-03</div><div class="info-item-2">希尔排序详解</div></div><div class="info-2"><div class="info-item-1">希尔排序代码详解（一看就懂）很多初学者看到希尔排序的代码会一头雾水，尤其是这个 gap 和 while 循环到底在干什么。别急，我们来一步步拆解。 我们先回顾一下代码： 123456789101112131415161718public static void shellSort(int[] arr) &#123;    if (arr == null || arr.length &lt;= 1) return;        // 1. 初始增量设为数组长度的一半    for (int gap = arr.length / 2; gap &gt; 0; gap /= 2) &#123;        // 2. 对每个子序列进行插入排序        for (int i = gap; i &lt; arr.length; i++) &#123;            int temp = arr[i];        // 当前要插入的元素            int j = i;            // 3. 在子序列中向前查找并移动元素            wh...</div></div></div></a><a class="pagination-related" href="/2025/09/04/%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82%E5%A0%86%E6%8E%92%E5%BA%8F%EF%BC%9A%E4%BB%8E%E4%BA%8C%E5%8F%89%E5%A0%86%E5%88%B0%E6%95%B0%E7%BB%84%E5%AE%9E%E7%8E%B0%EF%BC%8C%E4%B8%80%E6%96%87%E7%9C%8B%E6%87%82%E6%AF%8F%E4%B8%80%E6%AD%A5/" title="彻底搞懂堆排序：从二叉堆到数组实现，一文看懂每一步"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-04</div><div class="info-item-2">彻底搞懂堆排序：从二叉堆到数组实现，一文看懂每一步</div></div><div class="info-2"><div class="info-item-1">如果你学过归并排序和快速排序，可能会觉得它们“靠逻辑”；但当你第一次看到堆排序时，大概率会冒出三个问号：   堆是个啥？是数据结构还是算法？ 为什么建堆要从 n/2 - 1 开始？ heapify 到底在干什么？为什么要递归？   别急。今天我们不讲术语堆砌，也不甩公式，就用一张张“演变图” + 一行行代码解析，带你从零理解堆排序的每一个动作背后的逻辑。 准备好了吗？我们开始。 一、堆的本质：一棵用数组伪装的二叉树堆（Heap）是一种特殊的完全二叉树，分为大顶堆和小顶堆：  大顶堆：父节点 ≥ 子节点 → 根是最大值 小顶堆：父节点 ≤ 子节点 → 根是最小值  而堆排序用的是大顶堆，目标很明确：  不断把最大值拿出来，放到数组末尾，直到整个数组有序。   但关键来了：我们不用真的建一棵树！  🌲 堆是“用数组表示的二叉树”。   📐 数组如何表示二叉树？索引的秘密我们有一个数组： 1int[] arr = &#123;64, 34, 25, 12, 22, 11, 90&#125;;  它的索引是： 12索引： 0   1   2   3   4   5   6值：  64...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">菜菜熊</div><div class="author-info-description">欢迎来到菜菜熊的个人博客</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">5</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">5</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zhaojianjun2004" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:caicaixiong2004@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F%EF%BC%88Merge-Sort%EF%BC%89"><span class="toc-number">1.</span> <span class="toc-text">一、归并排序（Merge Sort）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E5%88%86%E8%80%8C%E6%B2%BB%E4%B9%8B"><span class="toc-number">1.1.</span> <span class="toc-text">1. 核心思想：分而治之</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%AE%97%E6%B3%95%E6%AD%A5%E9%AA%A4"><span class="toc-number">1.2.</span> <span class="toc-text">2. 算法步骤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Java-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0"><span class="toc-number">1.3.</span> <span class="toc-text">3. Java 代码实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90%EF%BC%9A%E4%B8%89%E5%8F%A5%E8%AF%9D%E8%AE%B2%E6%B8%85%E6%A5%9A"><span class="toc-number">1.4.</span> <span class="toc-text">4.代码解析：三句话讲清楚</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%F0%9F%A4%94-%E9%97%AE%E9%A2%98%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E6%9C%89%E2%80%9C%E5%A4%84%E7%90%86%E5%89%A9%E4%BD%99%E5%85%83%E7%B4%A0%E2%80%9D%E8%BF%99%E4%B8%80%E6%AD%A5%EF%BC%9F"><span class="toc-number">1.4.1.</span> <span class="toc-text">🤔 问题：为什么要有“处理剩余元素”这一步？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%F0%9F%A7%A9-%E4%B8%BE%E4%B8%AA%E4%BE%8B%E5%AD%90%EF%BC%9A%E7%9C%8B%E7%9C%8B%E2%80%9C%E5%89%A9%E4%BD%99%E5%85%83%E7%B4%A0%E2%80%9D%E6%98%AF%E6%80%8E%E4%B9%88%E6%9D%A5%E7%9A%84"><span class="toc-number">1.4.2.</span> <span class="toc-text">🧩 举个例子：看看“剩余元素”是怎么来的</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%F0%9F%8E%AF-%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BC%9A%E5%87%BA%E7%8E%B0%E2%80%9C%E5%89%A9%E4%BD%99%E5%85%83%E7%B4%A0%E2%80%9D%EF%BC%9F"><span class="toc-number">1.4.3.</span> <span class="toc-text">🎯 什么时候会出现“剩余元素”？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%F0%9F%94%8D-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%83%BD%E5%8F%AA%E9%9D%A0%E4%B8%BB%E5%BE%AA%E7%8E%AF%EF%BC%9F"><span class="toc-number">1.4.4.</span> <span class="toc-text">🔍 为什么不能只靠主循环？</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E2%9C%85-%E7%B1%BB%E6%AF%94%E7%90%86%E8%A7%A3%EF%BC%9A%E4%B8%A4%E4%B8%AA%E9%98%9F%E4%BC%8D%E5%90%88%E5%B9%B6%E6%8A%A5%E6%95%B0"><span class="toc-number">1.4.5.</span> <span class="toc-text">✅ 类比理解：两个队伍合并报数</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%F0%9F%92%A1-%E6%80%BB%E7%BB%93%EF%BC%9A%E4%B8%89%E5%8F%A5%E8%AF%9D%E6%90%9E%E6%87%82%E2%80%9C%E5%A4%84%E7%90%86%E5%89%A9%E4%BD%99%E5%85%83%E7%B4%A0%E2%80%9D"><span class="toc-number">1.5.</span> <span class="toc-text">💡 总结：三句话搞懂“处理剩余元素”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E5%A4%8D%E6%9D%82%E5%BA%A6%E5%88%86%E6%9E%90"><span class="toc-number">1.6.</span> <span class="toc-text">5. 复杂度分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-%E4%BC%98%E7%BC%BA%E7%82%B9"><span class="toc-number">1.7.</span> <span class="toc-text">6. 优缺点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F%EF%BC%88Quick-Sort%EF%BC%89"><span class="toc-number">2.</span> <span class="toc-text">二、快速排序（Quick Sort）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E6%8C%96%E5%9D%91%E5%A1%AB%E6%95%B0-%E5%88%86%E5%8C%BA"><span class="toc-number">2.1.</span> <span class="toc-text">1. 核心思想：挖坑填数 + 分区</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%AE%97%E6%B3%95%E6%AD%A5%E9%AA%A4-1"><span class="toc-number">2.2.</span> <span class="toc-text">2. 算法步骤</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Java-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0%EF%BC%88%E6%8C%96%E5%9D%91%E6%B3%95-%E5%8F%8C%E6%8C%87%E9%92%88%EF%BC%89"><span class="toc-number">2.3.</span> <span class="toc-text">3. Java 代码实现（挖坑法 + 双指针）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90%EF%BC%9A%E4%BB%80%E4%B9%88%E6%98%AF%E2%80%9C%E6%8C%96%E5%9D%91%E6%B3%95%E2%80%9D%EF%BC%9F"><span class="toc-number">2.4.</span> <span class="toc-text">4. 代码解析：什么是“挖坑法”？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E5%A4%8D%E6%9D%82%E5%BA%A6%E5%88%86%E6%9E%90-1"><span class="toc-number">2.5.</span> <span class="toc-text">5. 复杂度分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-%E4%BC%98%E7%BC%BA%E7%82%B9-1"><span class="toc-number">2.6.</span> <span class="toc-text">6. 优缺点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%F0%9F%94%A7-%EF%BC%88%E8%BF%9B%E9%98%B6%EF%BC%89%E4%BC%98%E5%8C%96%E5%AE%9E%E7%8E%B0%EF%BC%9A%E9%9A%8F%E6%9C%BA-pivot-%E4%B8%8E%E4%B8%89%E6%95%B0%E5%8F%96%E4%B8%AD%E6%B3%95"><span class="toc-number">2.7.</span> <span class="toc-text">🔧 （进阶）优化实现：随机 pivot 与三数取中法</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E2%9C%85-%E4%BC%98%E5%8C%96%E7%89%88%E6%9C%AC-1%EF%BC%9A%E9%9A%8F%E6%9C%BA%E5%9F%BA%E5%87%86%EF%BC%88Randomized-Pivot%EF%BC%89"><span class="toc-number">2.7.1.</span> <span class="toc-text">✅ 优化版本 1：随机基准（Randomized Pivot）</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%F0%9F%8C%9F-%E4%BC%98%E5%8C%96%E6%80%9D%E8%B7%AF%EF%BC%9A"><span class="toc-number">2.7.1.1.</span> <span class="toc-text">🌟 优化思路：</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E2%9C%85-%E4%BC%98%E7%82%B9%EF%BC%9A"><span class="toc-number">2.7.1.2.</span> <span class="toc-text">✅ 优点：</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E2%9C%85-%E4%BC%98%E5%8C%96%E7%89%88%E6%9C%AC-2%EF%BC%9A%E4%B8%89%E6%95%B0%E5%8F%96%E4%B8%AD%E6%B3%95%EF%BC%88Median-of-Three%EF%BC%89"><span class="toc-number">2.7.2.</span> <span class="toc-text">✅ 优化版本 2：三数取中法（Median-of-Three）</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#%F0%9F%8C%9F-%E4%BC%98%E5%8C%96%E6%80%9D%E8%B7%AF%EF%BC%9A-1"><span class="toc-number">2.7.2.1.</span> <span class="toc-text">🌟 优化思路：</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#%E2%9C%85-%E4%BC%98%E7%82%B9%EF%BC%9A-1"><span class="toc-number">2.7.2.2.</span> <span class="toc-text">✅ 优点：</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%F0%9F%94%8D-%E4%B8%A4%E7%A7%8D%E4%BC%98%E5%8C%96%E5%AF%B9%E6%AF%94"><span class="toc-number">2.7.3.</span> <span class="toc-text">🔍 两种优化对比</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%F0%9F%92%A1-%E5%B0%8F%E8%B4%B4%E5%A3%AB%EF%BC%9A%E7%94%9F%E4%BA%A7%E7%8E%AF%E5%A2%83%E4%B8%AD%E7%9A%84%E5%BF%AB%E6%8E%92"><span class="toc-number">2.7.4.</span> <span class="toc-text">💡 小贴士：生产环境中的快排</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%A0%86%E6%8E%92%E5%BA%8F%EF%BC%88Heap-Sort%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">三、堆排序（Heap Sort）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%A0%B8%E5%BF%83%E6%80%9D%E6%83%B3%EF%BC%9A%E5%88%A9%E7%94%A8%E5%A4%A7%E9%A1%B6%E5%A0%86%E2%80%9C%E9%80%90%E4%B8%AA%E9%80%89%E6%9C%80%E5%A4%A7%E2%80%9D"><span class="toc-number">3.1.</span> <span class="toc-text">1. 核心思想：利用大顶堆“逐个选最大”</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%AE%97%E6%B3%95%E6%AD%A5%E9%AA%A4-2"><span class="toc-number">3.2.</span> <span class="toc-text">2. 算法步骤</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%9B%BE%E8%A7%A3%E7%AE%97%E6%B3%95"><span class="toc-number">3.2.1.</span> <span class="toc-text">图解算法</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Java-%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0-1"><span class="toc-number">3.3.</span> <span class="toc-text">3. Java 代码实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E4%BB%A3%E7%A0%81%E8%A7%A3%E6%9E%90%EF%BC%9Aheapify-%E6%98%AF%E5%85%B3%E9%94%AE"><span class="toc-number">3.4.</span> <span class="toc-text">4. 代码解析：heapify 是关键</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-%E5%A4%8D%E6%9D%82%E5%BA%A6%E5%88%86%E6%9E%90-2"><span class="toc-number">3.5.</span> <span class="toc-text">5. 复杂度分析</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-%E4%BC%98%E7%BC%BA%E7%82%B9-2"><span class="toc-number">3.6.</span> <span class="toc-text">6. 优缺点</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E4%B8%89%E5%A4%A7%E6%8E%92%E5%BA%8F%E5%AF%B9%E6%AF%94%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">四、三大排序对比总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E2%9C%85-%E9%9D%A2%E8%AF%95%E9%AB%98%E9%A2%91%E9%97%AE%E9%A2%98%EF%BC%88%E6%8F%90%E5%89%8D%E5%87%86%E5%A4%87%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">✅ 面试高频问题（提前准备）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD%EF%BC%9ANlogN-%E7%9A%84%E4%B8%96%E7%95%8C%EF%BC%8C%E4%B8%8D%E6%AD%A2%E6%98%AF%E6%8E%92%E5%BA%8F"><span class="toc-number">6.</span> <span class="toc-text">结语：NlogN 的世界，不止是排序</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/04/%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82%E5%A0%86%E6%8E%92%E5%BA%8F%EF%BC%9A%E4%BB%8E%E4%BA%8C%E5%8F%89%E5%A0%86%E5%88%B0%E6%95%B0%E7%BB%84%E5%AE%9E%E7%8E%B0%EF%BC%8C%E4%B8%80%E6%96%87%E7%9C%8B%E6%87%82%E6%AF%8F%E4%B8%80%E6%AD%A5/" title="彻底搞懂堆排序：从二叉堆到数组实现，一文看懂每一步">彻底搞懂堆排序：从二叉堆到数组实现，一文看懂每一步</a><time datetime="2025-09-04T02:22:04.355Z" title="发表于 2025-09-04 10:22:04">2025-09-04</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/03/%E9%9D%A2%E8%AF%95%E5%BF%85%E8%80%83%EF%BC%81Java%E5%AE%9E%E7%8E%B0%E5%BD%92%E5%B9%B6%E3%80%81%E5%BF%AB%E6%8E%92%E3%80%81%E5%A0%86%E6%8E%92%EF%BC%8C%E5%BD%BB%E5%BA%95%E6%90%9E%E6%87%82NlogN%E7%AE%97%E6%B3%95/" title="面试必考！Java实现归并、快排、堆排，彻底搞懂NlogN算法">面试必考！Java实现归并、快排、堆排，彻底搞懂NlogN算法</a><time datetime="2025-09-03T14:49:56.484Z" title="发表于 2025-09-03 22:49:56">2025-09-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/03/%E5%B8%8C%E5%B0%94%E6%8E%92%E5%BA%8F%E8%AF%A6%E8%A7%A3/" title="希尔排序详解">希尔排序详解</a><time datetime="2025-09-03T14:12:28.686Z" title="发表于 2025-09-03 22:12:28">2025-09-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/03/%E4%BB%8E%E9%9B%B6%E5%BC%80%E5%A7%8B%E5%AD%A6%E6%8E%92%E5%BA%8F%EF%BC%9AJava%E5%AE%9E%E7%8E%B0%E5%86%92%E6%B3%A1%E3%80%81%E9%80%89%E6%8B%A9%E3%80%81%E6%8F%92%E5%85%A5%E3%80%81%E5%B8%8C%E5%B0%94/" title="从零开始学排序：Java实现冒泡、选择、插入、希尔">从零开始学排序：Java实现冒泡、选择、插入、希尔</a><time datetime="2025-09-03T08:56:29.000Z" title="发表于 2025-09-03 16:56:29">2025-09-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/03/%E4%B8%AA%E4%BA%BA%E5%8D%9A%E5%AE%A2%E6%90%AD%E5%BB%BA%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98/" title="个人博客搭建遇到的问题">个人博客搭建遇到的问题</a><time datetime="2025-09-03T01:15:46.857Z" title="发表于 2025-09-03 09:15:46">2025-09-03</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(https://personal-blog01.oss-cn-chengdu.aliyuncs.com/bg2.jpg);"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By 菜菜熊</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.0-b1</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
