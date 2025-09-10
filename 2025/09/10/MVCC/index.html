@@ -1,0 +1,321 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>深入理解MVCC：多版本并发控制的实现原理 | 菜菜熊</title><meta name="author" content="菜菜熊"><meta name="copyright" content="菜菜熊"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="在现代数据库系统中，如何在高并发环境下保证数据一致性、隔离性和高性能？MVCC 是解决这一问题的关键技术。本文将带你从零开始，深入剖析 MVCC 的实现原理。   一、什么是 MVCC？MVCC（Multi-Version Concurrency Control，多版本并发控制） 是一种用于实现数据库并发控制的机制。它允许读操作和写操作并发执行，而无需加锁阻塞对方，从而显著提升系统吞吐量和响应速">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解MVCC：多版本并发控制的实现原理">
+<meta property="og:url" content="https://zhaojianjun2004.github.io/2025/09/10/MVCC/index.html">
+<meta property="og:site_name" content="菜菜熊">
+<meta property="og:description" content="在现代数据库系统中，如何在高并发环境下保证数据一致性、隔离性和高性能？MVCC 是解决这一问题的关键技术。本文将带你从零开始，深入剖析 MVCC 的实现原理。   一、什么是 MVCC？MVCC（Multi-Version Concurrency Control，多版本并发控制） 是一种用于实现数据库并发控制的机制。它允许读操作和写操作并发执行，而无需加锁阻塞对方，从而显著提升系统吞吐量和响应速">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg">
+<meta property="article:published_time" content="2025-09-10T00:07:09.668Z">
+<meta property="article:modified_time" content="2025-09-10T00:52:36.743Z">
+<meta property="article:author" content="菜菜熊">
+<meta property="article:tag" content="面试题">
+<meta property="article:tag" content="java">
+<meta property="article:tag" content="并发编程">
+<meta property="article:tag" content="mysql">
+<meta property="article:tag" content="MVCC">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "深入理解MVCC：多版本并发控制的实现原理",
+  "url": "https://zhaojianjun2004.github.io/2025/09/10/MVCC/",
+  "image": "https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg",
+  "datePublished": "2025-09-10T00:07:09.668Z",
+  "dateModified": "2025-09-10T00:52:36.743Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "菜菜熊",
+      "url": "https://zhaojianjun2004.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg"><link rel="canonical" href="https://zhaojianjun2004.github.io/2025/09/10/MVCC/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '深入理解MVCC：多版本并发控制的实现原理',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">10</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">15</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">8</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时光档案</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(https://personal-blog01.oss-cn-chengdu.aliyuncs.com/bg2.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">菜菜熊</span></a><a class="nav-page-title" href="/"><span class="site-name">深入理解MVCC：多版本并发控制的实现原理</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 首页</span></a></div><div class="menus_item"><a class="site-page" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 时光档案</span></a></div><div class="menus_item"><a class="site-page" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></div><div class="menus_item"><a class="site-page" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">深入理解MVCC：多版本并发控制的实现原理</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-09-10T00:07:09.668Z" title="发表于 2025-09-10 08:07:09">2025-09-10</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-09-10T00:52:36.743Z" title="更新于 2025-09-10 08:52:36">2025-09-10</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/Mysql%E6%A0%B8%E5%BF%83%E6%8A%80%E6%9C%AF/">Mysql核心技术</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">总字数:</span><span class="word-count">1.4k</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>4分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
+<p>在现代数据库系统中，如何在高并发环境下保证数据一致性、隔离性和高性能？MVCC 是解决这一问题的关键技术。本文将带你从零开始，深入剖析 MVCC 的实现原理。 </p>
+</blockquote>
+<h2 id="一、什么是-MVCC？"><a href="#一、什么是-MVCC？" class="headerlink" title="一、什么是 MVCC？"></a>一、什么是 MVCC？</h2><p><strong>MVCC（Multi-Version Concurrency Control，多版本并发控制）</strong> 是一种用于实现数据库并发控制的机制。它允许读操作和写操作并发执行，而无需加锁阻塞对方，从而显著提升系统吞吐量和响应速度。</p>
+<p>MVCC 的核心思想是：</p>
+<blockquote>
+<p><strong>为每个事务提供数据的一个“快照”（Snapshot），使得读操作看到的是事务开始时的数据版本，而不是当前可能被其他事务修改的最新值。</strong> </p>
+</blockquote>
+<p>这使得“读不阻塞写，写不阻塞读”，非常适合 OLTP（在线事务处理）场景。</p>
+<h2 id="二、为什么需要-MVCC？"><a href="#二、为什么需要-MVCC？" class="headerlink" title="二、为什么需要 MVCC？"></a>二、为什么需要 MVCC？</h2><p>在没有 MVCC 的传统锁机制中：</p>
+<ul>
+<li>读操作需要加共享锁（S Lock），写操作需要加排他锁（X Lock）。</li>
+<li>读写互斥，写写互斥，容易造成锁竞争和阻塞。</li>
+<li>高并发下性能急剧下降。</li>
+</ul>
+<p>MVCC 通过“数据多版本”机制，避免了读写之间的锁冲突，同时还能支持不同的<strong>事务隔离级别</strong>（如 Read Committed、Repeatable Read）。</p>
+<h2 id="三、MVCC-的核心组件"><a href="#三、MVCC-的核心组件" class="headerlink" title="三、MVCC 的核心组件"></a>三、MVCC 的核心组件</h2><p>要实现 MVCC，数据库系统通常需要以下几个关键组件：</p>
+<h3 id="1-版本链（Version-Chain-Undo-Log）"><a href="#1-版本链（Version-Chain-Undo-Log）" class="headerlink" title="1. 版本链（Version Chain &#x2F; Undo Log）"></a>1. 版本链（Version Chain &#x2F; Undo Log）</h3><p>每条记录（Row）在被更新时，并不会直接覆盖旧值，而是保留旧版本，并生成一个新版本。这些版本通过指针（通常是 Undo Log）串联成一个<strong>版本链</strong>。</p>
+<ul>
+<li>每个版本记录包含：<ul>
+<li>数据内容</li>
+<li>创建该版本的事务 ID（trx_id）</li>
+<li>删除该版本的事务 ID（可选，或使用单独的删除标记）</li>
+<li>指向更早版本的指针（roll_ptr）</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>📌 示例：<br>假设某行数据被事务 T1、T2、T3 依次修改，则版本链为：<br><code>T3版 ← T2版 ← T1版 ← 初始版</code> </p>
+</blockquote>
+<h3 id="2-事务-ID（Transaction-ID）"><a href="#2-事务-ID（Transaction-ID）" class="headerlink" title="2. 事务 ID（Transaction ID）"></a>2. 事务 ID（Transaction ID）</h3><p>每个事务在启动时会被分配一个唯一的、单调递增的事务 ID（如 InnoDB 中的 <code>trx_id</code>）。事务 ID 用于判断版本的“可见性”。</p>
+<h3 id="3-Read-View（读视图）"><a href="#3-Read-View（读视图）" class="headerlink" title="3. Read View（读视图）"></a>3. Read View（读视图）</h3><p>当一个事务执行读操作时，会创建一个 <strong>Read View</strong>，用于决定哪些数据版本对该事务可见。</p>
+<p>Read View 包含以下关键信息：</p>
+<ul>
+<li><code>m_ids</code>：当前活跃（未提交）事务的 ID 列表。</li>
+<li><code>min_trx_id</code>：<code>m_ids</code> 中的最小事务 ID。</li>
+<li><code>max_trx_id</code>：下一个将要分配的事务 ID（即当前系统中最大事务 ID + 1）。</li>
+<li><code>creator_trx_id</code>：创建该 Read View 的事务 ID（只读事务通常为 0）。</li>
+</ul>
+<h2 id="四、MVCC-如何判断版本可见性？"><a href="#四、MVCC-如何判断版本可见性？" class="headerlink" title="四、MVCC 如何判断版本可见性？"></a>四、MVCC 如何判断版本可见性？</h2><p>这是 MVCC 最核心的逻辑。数据库通过比较记录版本的 <code>trx_id</code> 与 Read View 中的信息，决定该版本是否对当前事务可见。</p>
+<h3 id="可见性判断规则（以-InnoDB-为例）："><a href="#可见性判断规则（以-InnoDB-为例）：" class="headerlink" title="可见性判断规则（以 InnoDB 为例）："></a>可见性判断规则（以 InnoDB 为例）：</h3><p>假设当前记录版本的 <code>trx_id</code> 为 <code>V</code>，Read View 为 <code>R</code>：</p>
+<ol>
+<li><strong>如果 <code>V &lt; R.min_trx_id</code></strong><br>→ 该版本由已提交事务创建，<strong>可见</strong>。</li>
+<li><strong>如果 <code>V &gt;= R.max_trx_id</code></strong><br>→ 该版本由“未来”事务创建（启动时间晚于当前事务），<strong>不可见</strong>。</li>
+<li><strong>如果 <code>V ∈ R.m_ids</code>（即 V 在活跃事务列表中）</strong><br>→ 该版本由未提交事务创建，<strong>不可见</strong>。</li>
+<li><strong>如果 <code>V ∉ R.m_ids</code> 且 <code>R.min_trx_id &lt;= V &lt; R.max_trx_id</code></strong><br>→ 该版本由已提交事务创建，<strong>可见</strong>。</li>
+</ol>
+<blockquote>
+<p>✅ 简化记忆口诀：<br>“早于最小活跃事务的，可见；晚于当前事务的，不可见；在活跃列表中的，不可见；其他已提交的，可见。” </p>
+</blockquote>
+<h2 id="五、MVCC-在不同隔离级别下的行为"><a href="#五、MVCC-在不同隔离级别下的行为" class="headerlink" title="五、MVCC 在不同隔离级别下的行为"></a>五、MVCC 在不同隔离级别下的行为</h2><p>MVCC 的行为会因事务隔离级别不同而有所调整：</p>
+<table>
+<thead>
+<tr>
+<th>隔离级别</th>
+<th>ReadView创建时机</th>
+<th>行为特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Read Uncommitted</td>
+<td>不使用 MVCC（直接读最新）</td>
+<td>可能读到未提交数据（脏读）</td>
+</tr>
+<tr>
+<td>Read Committed</td>
+<td>每条 SELECT 语句前创建</td>
+<td>每次读取都看到最新已提交版本</td>
+</tr>
+<tr>
+<td>Repeatable Read</td>
+<td>事务第一次 SELECT 时创建</td>
+<td>整个事务中看到的数据版本保持一致</td>
+</tr>
+<tr>
+<td>Serializable</td>
+<td>通常退化为加锁</td>
+<td>严格串行，避免幻读</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ 注意：MySQL InnoDB 默认隔离级别是 <strong>Repeatable Read</strong>，其 MVCC 行为保证了可重复读，但对“当前读”（如 <code>SELECT ... FOR UPDATE</code>）仍会加锁。 </p>
+</blockquote>
+<h2 id="六、MVCC-实现示例（InnoDB）"><a href="#六、MVCC-实现示例（InnoDB）" class="headerlink" title="六、MVCC 实现示例（InnoDB）"></a>六、MVCC 实现示例（InnoDB）</h2><p>我们以 MySQL InnoDB 引擎为例，看看 MVCC 是如何落地的。</p>
+<h3 id="1-隐藏列"><a href="#1-隐藏列" class="headerlink" title="1. 隐藏列"></a>1. 隐藏列</h3><p>InnoDB 为每一行数据隐式添加了三个系统列（用户不可见）：</p>
+<ul>
+<li><code>DB_TRX_ID</code>：最近修改该行的事务 ID。</li>
+<li><code>DB_ROLL_PTR</code>：指向 Undo Log 中上一个版本的指针。</li>
+<li><code>DB_ROW_ID</code>：行 ID（当表无主键时使用）。</li>
+</ul>
+<h3 id="2-Undo-Log"><a href="#2-Undo-Log" class="headerlink" title="2. Undo Log"></a>2. Undo Log</h3><p>Undo Log 用于存储旧版本数据。当 UPDATE 或 DELETE 发生时：</p>
+<ul>
+<li>旧版本数据写入 Undo Log。</li>
+<li>当前记录的 <code>DB_ROLL_PTR</code> 指向该 Undo 记录。</li>
+<li>形成版本链。</li>
+</ul>
+<p>Undo Log 是“逻辑日志”，记录的是如何逆向操作（如：UPDATE 前的值）。</p>
+<blockquote>
+<p>🧹 <strong>Purge 线程</strong>：后台线程定期清理不再被任何事务需要的旧版本（即没有 Read View 依赖的版本），释放空间。 </p>
+</blockquote>
+<h3 id="3-Read-View-创建时机"><a href="#3-Read-View-创建时机" class="headerlink" title="3. Read View 创建时机"></a>3. Read View 创建时机</h3><ul>
+<li><strong>RC 级别</strong>：每次执行 SELECT 前创建新的 Read View。</li>
+<li><strong>RR 级别</strong>：事务中第一次 SELECT 时创建，后续复用。</li>
+</ul>
+<blockquote>
+<p>两种隔离级别下的ReadView图示：</p>
+</blockquote>
+<h4 id="3-1、事务隔离级别为RC（读已提交隔）："><a href="#3-1、事务隔离级别为RC（读已提交隔）：" class="headerlink" title="3.1、事务隔离级别为RC（读已提交隔）："></a>3.1、事务隔离级别为RC（读已提交隔）：</h4><p><img src="https://raw.githubusercontent.com/zhaojianjun2004/picGo/master/img/74171c5081814cddbbb20235df04ae76%7Etplv-k3u1fbpfcp-zoom-in-crop-mark%3A1512%3A0%3A0%3A0.awebp" alt="img"></p>
+<h4 id="3-2、事务隔离级别为RR（可重复读）："><a href="#3-2、事务隔离级别为RR（可重复读）：" class="headerlink" title="3.2、事务隔离级别为RR（可重复读）："></a>3.2、事务隔离级别为RR（可重复读）：</h4><p><img src="https://raw.githubusercontent.com/zhaojianjun2004/picGo/master/img/17d7f276a34b4d84ae022218d161b510%7Etplv-k3u1fbpfcp-zoom-in-crop-mark%3A1512%3A0%3A0%3A0.awebp" alt="img"></p>
+<blockquote>
+<p>参考链接：<a target="_blank" rel="noopener" href="https://juejin.cn/post/7066633257781035045">深入理解MySQL的MVCC原理介绍MySQL的MVCC实现初衷（为什么要有MVCC）、实现原理（是如何实现的）、MVC - 掘金</a></p>
+</blockquote>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zhaojianjun2004.github.io">菜菜熊</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zhaojianjun2004.github.io/2025/09/10/MVCC/">https://zhaojianjun2004.github.io/2025/09/10/MVCC/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zhaojianjun2004.github.io" target="_blank">菜菜熊</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%9D%A2%E8%AF%95%E9%A2%98/">面试题</a><a class="post-meta__tags" href="/tags/java/">java</a><a class="post-meta__tags" href="/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a><a class="post-meta__tags" href="/tags/mysql/">mysql</a><a class="post-meta__tags" href="/tags/MVCC/">MVCC</a></div><div class="post-share"><div class="social-share" data-image="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2025/09/05/unable_access/" title="Failed to connect to github.com port 443 after 21133 ms问题解决"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Failed to connect to github.com port 443 after 21133 ms问题解决</div></div><div class="info-2"><div class="info-item-1">前言在使用 Hexo 搭建个人博客的过程中，部署到 GitHub Pages 是最常见的方式。然而，许多人在执行 hexo deploy 时，常常遇到各种网络问题，比如： 12fatal: unable to access &#x27;https://github.com/xxx/xxx.github.io.git/&#x27;: Failed to connect to github.com port 443 after 21133 ms: Couldn&#x27;t connect to server  这篇文章将带你彻底理解问题根源，并提供长期有效的解决方案，让你告别部署失败的烦恼。  一、问题背景我们通常使用 hexo-deployer-git 插件，通过 HTTPS 协议将生成的静态文件推送到 GitHub 仓库。配置如下： 12345# _config.ymldeploy:  type: git  repo: &#x27;https://username:personal-access-token@github.com/username/username.github...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/09/04/TheadLocal/" title="深入理解 Java ThreadLocal：原理、内存泄漏与最佳实践"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-04</div><div class="info-item-2">深入理解 Java ThreadLocal：原理、内存泄漏与最佳实践</div></div><div class="info-2"><div class="info-item-1">1. 引言：为什么需要 ThreadLocal？在多线程编程中，共享变量容易引发线程安全问题。虽然可以通过 synchronized 或 ReentrantLock 加锁解决，但锁会带来性能开销。而有些场景下，我们希望每个线程拥有自己的“独立副本”，互不干扰。  举个例子：在 Web 应用中，一个请求对应一个线程，我们希望在整个请求处理链路中共享用户信息（如用户ID、权限等），但又不希望多个请求之间互相污染。这时，ThreadLocal 就是一个理想选择。   2. ThreadLocal 是什么？ThreadLocal 是 Java 提供的一个类，用于创建线程局部变量。每个线程对该变量的读写都独立于其他线程，即使多个线程操作同一个 ThreadLocal 实例，也不会相互影响。 12345678910111213public class ThreadLocalExample &#123;    private static ThreadLocal&lt;String&gt; threadLocal = new ThreadLocal&lt;&gt;();    public s...</div></div></div></a><a class="pagination-related" href="/2025/09/05/groupMarket/" title="拼团系统是如何防止超卖的？揭秘“锁单”背后的核心设计(一)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-05</div><div class="info-item-2">拼团系统是如何防止超卖的？揭秘“锁单”背后的核心设计(一)</div></div><div class="info-2"><div class="info-item-1">一、你以为的拼团，其实早就“满了”你有没有遇到过这样的情况？ 晚上8点，某平台爆款水果拼团开抢。你准时点开链接，手速飞快地点击“立即参团”，页面跳转到支付页，正准备扫码付款—— 突然弹出一行字：  “抱歉，该团已满，请加入其他团或发起新团。”   你愣了一下：刚才不是还能点进去吗？怎么一转眼就满了？ 更奇怪的是，你朋友却告诉你：“我刚拼上了啊，一切顺利。”你们明明是同一时间操作的，为什么结果完全不同？ 拼团，不是“谁先点谁赢”很多人以为，拼团就像抢票，谁手速快，谁就能抢到。但现实是：在你点击“参团”的那一刻，胜负早已决定。 真正决定你能不能参与的，不是你的手指有多快，而是系统是否还允许“新增一个参团名额”。 换句话说：  即使页面没灰显、按钮可点击，那个团，可能早就满了。   那个“看不见的门槛”：锁单机制为什么会出现这种“能进不能成”的情况？ 因为现代拼团系统里，有一个你看不见但至关重要的环节——  锁单（Lock Order）   它发生在你点击“参团”之后、支付之前，是系统为你临时锁定拼团资格和优惠价格的过程。 你可以把它理解成：  “先占坑，再付款”坑占住了，你才有资格支...</div></div></div></a><a class="pagination-related" href="/2025/09/05/groupMarket1/" title="拼团系统是如何防止超卖的？揭秘“锁单”背后的核心设计(二)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-05</div><div class="info-item-2">拼团系统是如何防止超卖的？揭秘“锁单”背后的核心设计(二)</div></div><div class="info-2"><div class="info-item-1">这一部分我们将继续深入探讨：当成千上万的人同时点击“参团”，系统是如何做到“一个不多、一个不少”的？ 真实世界中，拼团系统在高并发下如何稳如泰山。 三、高并发下，拼团系统是怎么守住“最后1个名额”的？想象这样一个场景： 某平台推出“9.9元抢龙虾”拼团活动，限量1000个团，每团5人。活动开始前，已有上万人在页面等待倒计时。 ⏰ 8:00整，秒杀开始。 一瞬间，数万人同时点击“立即参团”。网络请求像海啸一样涌向服务器。 问题来了：  系统怎么保证每个团最多只有5个人能参与？不会出现第6个人也“成功”参团吗？   这就像春运抢票——铁轨上的座位是固定的，但买票的人是海量的。谁该得票，谁该等待，全靠系统的一套“公平规则”来裁定。 拼团系统也一样，它靠的不是“算力多强”，而是设计精巧的并发控制机制。 1、最危险的操作：先查再改我们先看一个看似合理、实则致命的做法： 1234567// ❌ 危险代码：先查后改GroupBuyOrder team = dao.queryByTeamId(teamId);if (team.getLockCount() + team.getCompleteCo...</div></div></div></a></div></div><hr class="custom-hr"/><div id="post-comment"><div class="comment-head"><div class="comment-headline"><i class="fas fa-comments fa-fw"></i><span> 评论</span></div></div><div class="comment-wrap"><div><div id="lv-container" data-id="city" data-uid="MTAyMC82MDg5Ni8zNzM2Ng=="></div></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://personal-blog01.oss-cn-chengdu.aliyuncs.com/%E5%A4%B4%E5%83%8F.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">菜菜熊</div><div class="author-info-description">欢迎来到菜菜熊的个人博客</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">10</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">15</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">8</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/zhaojianjun2004" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:caicaixiong2004@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E4%BB%80%E4%B9%88%E6%98%AF-MVCC%EF%BC%9F"><span class="toc-text">一、什么是 MVCC？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-MVCC%EF%BC%9F"><span class="toc-text">二、为什么需要 MVCC？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81MVCC-%E7%9A%84%E6%A0%B8%E5%BF%83%E7%BB%84%E4%BB%B6"><span class="toc-text">三、MVCC 的核心组件</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%89%88%E6%9C%AC%E9%93%BE%EF%BC%88Version-Chain-Undo-Log%EF%BC%89"><span class="toc-text">1. 版本链（Version Chain &#x2F; Undo Log）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E4%BA%8B%E5%8A%A1-ID%EF%BC%88Transaction-ID%EF%BC%89"><span class="toc-text">2. 事务 ID（Transaction ID）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Read-View%EF%BC%88%E8%AF%BB%E8%A7%86%E5%9B%BE%EF%BC%89"><span class="toc-text">3. Read View（读视图）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81MVCC-%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E7%89%88%E6%9C%AC%E5%8F%AF%E8%A7%81%E6%80%A7%EF%BC%9F"><span class="toc-text">四、MVCC 如何判断版本可见性？</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%AF%E8%A7%81%E6%80%A7%E5%88%A4%E6%96%AD%E8%A7%84%E5%88%99%EF%BC%88%E4%BB%A5-InnoDB-%E4%B8%BA%E4%BE%8B%EF%BC%89%EF%BC%9A"><span class="toc-text">可见性判断规则（以 InnoDB 为例）：</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81MVCC-%E5%9C%A8%E4%B8%8D%E5%90%8C%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%B8%8B%E7%9A%84%E8%A1%8C%E4%B8%BA"><span class="toc-text">五、MVCC 在不同隔离级别下的行为</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81MVCC-%E5%AE%9E%E7%8E%B0%E7%A4%BA%E4%BE%8B%EF%BC%88InnoDB%EF%BC%89"><span class="toc-text">六、MVCC 实现示例（InnoDB）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E9%9A%90%E8%97%8F%E5%88%97"><span class="toc-text">1. 隐藏列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Undo-Log"><span class="toc-text">2. Undo Log</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Read-View-%E5%88%9B%E5%BB%BA%E6%97%B6%E6%9C%BA"><span class="toc-text">3. Read View 创建时机</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-1%E3%80%81%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%B8%BARC%EF%BC%88%E8%AF%BB%E5%B7%B2%E6%8F%90%E4%BA%A4%E9%9A%94%EF%BC%89%EF%BC%9A"><span class="toc-text">3.1、事务隔离级别为RC（读已提交隔）：</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-2%E3%80%81%E4%BA%8B%E5%8A%A1%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%B8%BARR%EF%BC%88%E5%8F%AF%E9%87%8D%E5%A4%8D%E8%AF%BB%EF%BC%89%EF%BC%9A"><span class="toc-text">3.2、事务隔离级别为RR（可重复读）：</span></a></li></ol></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/10/MVCC/" title="深入理解MVCC：多版本并发控制的实现原理">深入理解MVCC：多版本并发控制的实现原理</a><time datetime="2025-09-10T00:07:09.668Z" title="发表于 2025-09-10 08:07:09">2025-09-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/05/unable_access/" title="Failed to connect to github.com port 443 after 21133 ms问题解决">Failed to connect to github.com port 443 after 21133 ms问题解决</a><time datetime="2025-09-05T15:05:46.262Z" title="发表于 2025-09-05 23:05:46">2025-09-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/05/groupMarket1/" title="拼团系统是如何防止超卖的？揭秘“锁单”背后的核心设计(二)">拼团系统是如何防止超卖的？揭秘“锁单”背后的核心设计(二)</a><time datetime="2025-09-05T13:40:37.382Z" title="发表于 2025-09-05 21:40:37">2025-09-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/05/groupMarket/" title="拼团系统是如何防止超卖的？揭秘“锁单”背后的核心设计(一)">拼团系统是如何防止超卖的？揭秘“锁单”背后的核心设计(一)</a><time datetime="2025-09-05T13:30:16.931Z" title="发表于 2025-09-05 21:30:16">2025-09-05</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/09/04/TheadLocal/" title="深入理解 Java ThreadLocal：原理、内存泄漏与最佳实践">深入理解 Java ThreadLocal：原理、内存泄漏与最佳实践</a><time datetime="2025-09-04T06:55:21.897Z" title="发表于 2025-09-04 14:55:21">2025-09-04</time></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(https://personal-blog01.oss-cn-chengdu.aliyuncs.com/bg2.jpg);"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By 菜菜熊</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.3.0</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.0-b1</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><a id="to_comment" href="#post-comment" title="前往评论"><i class="fas fa-comments"></i></a><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"><script>(() => {
+  const isShuoshuo = GLOBAL_CONFIG_SITE.pageType === 'shuoshuo'
+
+  const loadLivere = (el, path) => {
+    window.livereOptions = {
+      refer: path || location.pathname
+    }
+
+    if (isShuoshuo) {
+      window.shuoshuoComment.destroyLivere = () => {
+        if (el.children.length) {
+          el.innerHTML = ''
+          el.classList.add('no-comment')
+        }
+      }
+    }
+
+    if (typeof LivereTower === 'object') window.LivereTower.init()
+    else {
+      (function(d, s) {
+          var j, e = d.getElementsByTagName(s)[0];
+          if (typeof LivereTower === 'function') { return; }
+          j = d.createElement(s);
+          j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+          j.async = true;
+          e.parentNode.insertBefore(j, e);
+      })(document, 'script');
+    }
+  }
+
+  if (isShuoshuo) {
+    'Livere' === 'Livere'
+      ? window.shuoshuoComment = { loadComment: loadLivere }
+      : window.loadOtherComment = loadLivere
+    return
+  }
+
+  if ('Livere' === 'Livere' || !false) {
+    if (false) btf.loadComment(document.getElementById('lv-container'), loadLivere)
+    else loadLivere()
+  } else {
+    window.loadOtherComment = loadLivere
+  }
+})()</script></div><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-nest.min.js"></script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
